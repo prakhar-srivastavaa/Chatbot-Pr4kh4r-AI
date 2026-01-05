@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useUser } from "../context/UserContext";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -8,28 +9,46 @@ import {
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
 import { User, Settings, HelpCircle, LogOut, ChevronDown } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 
 interface UserMenuProps {
   onSignOut: () => void;
+  onOpenProfile?: () => void;
 }
 
-export function UserMenu({ onSignOut }: UserMenuProps) {
+export function UserMenu({ onSignOut, onOpenProfile }: UserMenuProps) {
+  const { user } = useUser();
+
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
+  if (!user) return null;
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger className="flex items-center gap-2 w-full hover:bg-sidebar-accent rounded-md p-2 transition-colors outline-none">
-        <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center">
-          <User className="h-4 w-4 text-white" />
-        </div>
+        <Avatar className="w-8 h-8">
+          <AvatarImage src={user.avatar} alt={user.name} />
+          <AvatarFallback className="bg-orange-500 text-white text-xs">
+            {getInitials(user.name)}
+          </AvatarFallback>
+        </Avatar>
         <div className="flex-1 min-w-0 text-left">
-          <p className="text-sm font-medium text-sidebar-foreground">Prakhar Srivastava</p>
-          <p className="text-xs text-sidebar-foreground/70">Pro plan</p>
+          <p className="text-sm font-medium text-sidebar-foreground truncate">{user.name}</p>
+          <p className="text-xs text-sidebar-foreground/70">{user.email}</p>
         </div>
         <ChevronDown className="h-4 w-4 text-sidebar-foreground/70" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuLabel>My Account</DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem className="cursor-pointer">
+        <DropdownMenuItem className="cursor-pointer" onClick={onOpenProfile}>
           <User className="mr-2 h-4 w-4" />
           <span>Profile</span>
         </DropdownMenuItem>

@@ -29,6 +29,7 @@ interface ClaudeSidebarProps {
   onNewChat: () => void;
   onDeleteChat: (chatId: string) => void;
   onSignOut: () => void;
+  onOpenProfile?: () => void;
 }
 
 export function ClaudeSidebar({ 
@@ -37,30 +38,19 @@ export function ClaudeSidebar({
   onSelectChat, 
   onNewChat, 
   onDeleteChat,
-  onSignOut
+  onSignOut,
+  onOpenProfile
 }: ClaudeSidebarProps) {
-  // Mock data for starred and recent items to match the image
+  // Starred items can remain static or be enhanced later
   const starredItems = [
     "AI Product Documentation",
     "AI Documentation Strategy"
   ];
 
-  const recentItems = [
-    "System Architecture Design...",
-    "AI Talent Matching System",
-    "AI Video Planner App Development",
-    "AI Prompt Generator Web App",
-    "UI Mockup Design",
-    "AI Training Platform for Business...",
-    "Prompt Generator Web App",
-    "Prototype Development",
-    "AI Storyboard App Development",
-    "AI Storyboard Builder App",
-    "App Development Concept",
-    "Project Finalization",
-    "Digital Product Trends Analysis",
-    "API Pricing Details"
-  ];
+  // Use the most recent 10 chats from chatHistory as recents
+  const recentItems = chatHistory
+    .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
+    .slice(0, 10);
 
   const formatTime = (date: Date) => {
     const now = new Date();
@@ -74,8 +64,8 @@ export function ClaudeSidebar({
   };
 
   return (
-    <Sidebar className="w-64 border-r border-sidebar-border">
-      <SidebarHeader className="p-4 border-b border-sidebar-border">
+    <div className="w-full h-full flex flex-col bg-sidebar border-r border-sidebar-border">
+      <div className="p-4 border-b border-sidebar-border flex-shrink-0">
         <div className="flex items-center gap-2 mb-4">
           <div className="w-6 h-6 bg-orange-500 rounded flex items-center justify-center">
             <span className="text-white text-xs font-medium">P</span>
@@ -91,9 +81,9 @@ export function ClaudeSidebar({
           <Plus className="h-4 w-4 mr-2" />
           New chat
         </Button>
-      </SidebarHeader>
+      </div>
 
-      <SidebarContent className="p-0">
+      <div className="flex-1 overflow-hidden">
         <ScrollArea className="flex-1">
           <div className="p-2">
             {/* Navigation sections */}
@@ -146,27 +136,28 @@ export function ClaudeSidebar({
                 Recents
               </div>
               <div className="space-y-1 mt-2">
-                {recentItems.map((item, index) => (
-                  <button
-                    key={index}
-                    className="w-full text-left px-2 py-1.5 text-sm text-sidebar-foreground hover:bg-sidebar-accent rounded-md truncate"
-                    onClick={() => {
-                      // For demo purposes, create a new chat when clicking recent items
-                      onNewChat();
-                    }}
-                  >
-                    {item}
-                  </button>
-                ))}
+                {recentItems.length === 0 ? (
+                  <div className="px-2 py-1.5 text-sm text-muted-foreground">No recent chats</div>
+                ) : (
+                  recentItems.map((chat) => (
+                    <button
+                      key={chat.id}
+                      className={`w-full text-left px-2 py-1.5 text-sm text-sidebar-foreground hover:bg-sidebar-accent rounded-md truncate ${currentChatId === chat.id ? 'bg-sidebar-accent' : ''}`}
+                      onClick={() => onSelectChat(chat.id)}
+                    >
+                      {chat.title}
+                    </button>
+                  ))
+                )}
               </div>
             </div>
           </div>
         </ScrollArea>
-      </SidebarContent>
+      </div>
 
-      <SidebarFooter className="p-4 border-t border-sidebar-border">
-        <UserMenu onSignOut={onSignOut} />
-      </SidebarFooter>
-    </Sidebar>
+      <div className="p-4 border-t border-sidebar-border flex-shrink-0">
+        <UserMenu onSignOut={onSignOut} onOpenProfile={onOpenProfile} />
+      </div>
+    </div>
   );
 }

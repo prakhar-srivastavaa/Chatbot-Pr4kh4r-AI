@@ -8,12 +8,14 @@ import { Eye, EyeOff, Github, Mail } from "lucide-react";
 import { Separator } from "./ui/separator";
 import { Checkbox } from "./ui/checkbox";
 import { ThemeToggle } from "./ThemeToggle";
+import { initiateOAuthLogin } from "../config/oauth.config";
 
 interface LoginProps {
   onLogin: (email: string, password: string) => void;
+  onOAuthLogin?: (provider: 'google' | 'github') => void;
 }
 
-export function Login({ onLogin }: LoginProps) {
+export function Login({ onLogin, onOAuthLogin }: LoginProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
@@ -39,9 +41,20 @@ export function Login({ onLogin }: LoginProps) {
     }
   };
 
-  const handleSocialLogin = (provider: string) => {
-    // Handle social login
-    console.log(`Login with ${provider}`);
+  const handleSocialLogin = (provider: 'google' | 'github') => {
+    try {
+      // Initiate OAuth flow - this will redirect to OAuth provider
+      initiateOAuthLogin(provider);
+      
+      // Note: After successful OAuth, user will be redirected back
+      // In a real app, you'd handle the callback and call onOAuthLogin
+      // For now, this is a mock for development
+      if (onOAuthLogin) {
+        onOAuthLogin(provider);
+      }
+    } catch (error) {
+      console.error('OAuth login error:', error);
+    }
   };
 
   const handleForgotPassword = () => {
