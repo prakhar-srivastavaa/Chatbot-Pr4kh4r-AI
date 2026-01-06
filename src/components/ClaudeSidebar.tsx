@@ -10,7 +10,8 @@ import {
   Star, 
   Clock,
   ChevronDown,
-  User
+  User,
+  Trash2
 } from "lucide-react";
 import { UserMenu } from "./UserMenu";
 
@@ -140,13 +141,27 @@ export function ClaudeSidebar({
                   <div className="px-2 py-1.5 text-sm text-muted-foreground">No recent chats</div>
                 ) : (
                   recentItems.map((chat) => (
-                    <button
+                    <div
                       key={chat.id}
-                      className={`w-full text-left px-2 py-1.5 text-sm text-sidebar-foreground hover:bg-sidebar-accent rounded-md truncate ${currentChatId === chat.id ? 'bg-sidebar-accent' : ''}`}
-                      onClick={() => onSelectChat(chat.id)}
+                      className={`group flex items-center gap-1 w-full px-2 py-1.5 text-sm text-sidebar-foreground hover:bg-sidebar-accent rounded-md ${currentChatId === chat.id ? 'bg-sidebar-accent' : ''}`}
                     >
-                      {chat.title}
-                    </button>
+                      <button
+                        className="flex-1 text-left truncate"
+                        onClick={() => onSelectChat(chat.id)}
+                      >
+                        {chat.title}
+                      </button>
+                      <button
+                        className="opacity-0 group-hover:opacity-100 p-0.5 hover:bg-red-100 dark:hover:bg-red-900 rounded transition-opacity"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDeleteChat(chat.id);
+                        }}
+                        title="Delete chat"
+                      >
+                        <Trash2 className="h-3 w-3 text-red-500 hover:text-red-700" />
+                      </button>
+                    </div>
                   ))
                 )}
               </div>

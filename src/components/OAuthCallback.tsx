@@ -1,13 +1,11 @@
 import { useEffect } from 'react';
-import { useUser } from '../context/UserContext';
 
 interface OAuthCallbackProps {
   provider: 'google' | 'github';
-  onComplete: () => void;
+  onComplete: (userData: any) => void;
 }
 
 export function OAuthCallback({ provider, onComplete }: OAuthCallbackProps) {
-  const { login } = useUser();
 
   useEffect(() => {
     const handleCallback = async () => {
@@ -19,43 +17,59 @@ export function OAuthCallback({ provider, onComplete }: OAuthCallbackProps) {
         if (error) {
           console.error('OAuth error:', error);
           alert(`OAuth failed: ${error}`);
-          onComplete();
+          onComplete(null);
           return;
         }
 
         if (!code) {
           console.error('No authorization code received');
-          onComplete();
+          onComplete(null);
           return;
         }
 
-        // In a real app, you would send the code to your backend
-        // For now, we'll create a mock user based on the provider
-        const mockUser = {
-          id: Date.now().toString(),
-          email: `user@${provider}.com`,
-          name: `${provider.charAt(0).toUpperCase() + provider.slice(1)} User`,
-          avatar: provider === 'github' 
-            ? 'https://github.com/identicons/user.png'
-            : undefined,
-          provider,
-          createdAt: new Date().toISOString(),
-          lastLogin: new Date().toISOString(),
-        };
+        // Exchange code for access token via backend
+        try {
+          const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3031';
+          const response = await fetch(`${backendUrl}/api/auth/${provider}/callback`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ code }),
+          });
 
-        login(mockUser);
+          if (!response.ok) {
+            throw new Error('Backend OAuth exchange failed');
+          }
+
+          const { user: userData } = await response.json();
+          
+          console.log(`✅ OAuth login successful for ${provider}:`, userData);
+          
+          const userProfile = {
+            ...userData,
+            createdAt: new Date().toISOString(),
+            lastLogin: new Date().toISOString(),
+          };
+
+          // Pass user data to parent to show password prompt
+          onComplete(userProfile);
+        } catch (fetchError) {
+          console.error('Failed to exchange OAuth code:', fetchError);
+          console.warn('Make sure backend server is running on http://localhost:3031');
+          onComplete(null);
+        }
         
         // Clean up URL
         window.history.replaceState({}, document.title, '/');
-        onComplete();
       } catch (error) {
         console.error('OAuth callback error:', error);
-        onComplete();
+        onComplete(null);
       }
     };
 
     handleCallback();
-  }, [provider, login, onComplete]);
+  }, [provider, onComplete]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">

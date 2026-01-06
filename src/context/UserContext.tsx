@@ -1,5 +1,18 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
+export interface ChatHistoryItem {
+  id: string;
+  title: string;
+  messages: Array<{
+    id: string;
+    text: string;
+    isUser: boolean;
+    timestamp: Date;
+  }>;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export interface UserProfile {
   id: string;
   email: string;
@@ -7,6 +20,7 @@ export interface UserProfile {
   avatar?: string;
   phone?: string;
   bio?: string;
+  password?: string; // For email-based login
   provider: 'google' | 'github' | 'email';
   createdAt: string;
   lastLogin: string;
@@ -15,28 +29,45 @@ export interface UserProfile {
 interface UserContextType {
   user: UserProfile | null;
   isAuthenticated: boolean;
+  chatHistory: ChatHistoryItem[];
   login: (user: UserProfile) => void;
   logout: () => void;
   updateProfile: (updates: Partial<UserProfile>) => void;
+  addChatToHistory: (chat: ChatHistoryItem) => void;
+  removeChatFromHistory: (chatId: string) => void;
+  updateChatInHistory: (chat: ChatHistoryItem) => void;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
-const STORAGE_KEY = 'pr4kh4r_user_profile';
+const USER_STORAGE_KEY = 'pr4kh4r_user_profile';
+const CHAT_STORAGE_KEY = 'pr4kh4r_chat_history';
 
 export function UserProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
+  const [chatHistory, setChatHistory] = useState<ChatHistoryItem[]>([]);
 
-  // Load user from localStorage on mount
+  // Load user and chat history from localStorage on mount
   useEffect(() => {
-    const storedUser = localStorage.getItem(STORAGE_KEY);
+    const storedUser = localStorage.getItem(USER_STORAGE_KEY);
     if (storedUser) {
       try {
         const parsedUser = JSON.parse(storedUser);
         setUser(parsedUser);
       } catch (error) {
         console.error('Failed to parse stored user:', error);
-        localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem(USER_STORAGE_KEY);
+      }
+    }
+
+    const storedChats = localStorage.getItem(CHAT_STORAGE_KEY);
+    if (storedChats) {
+      try {
+        const parsedChats = JSON.parse(storedChats);
+        setChatHistory(parsedChats);
+      } catch (error) {
+        console.error('Failed to parse stored chats:', error);
+        localStorage.removeItem(CHAT_STORAGE_KEY);
       }
     }
   }, []);
@@ -44,11 +75,18 @@ export function UserProvider({ children }: { children: ReactNode }) {
   // Save user to localStorage whenever it changes
   useEffect(() => {
     if (user) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
+      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
     } else {
-      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(USER_STORAGE_KEY);
     }
   }, [user]);
+
+  // Save chat history to localStorage whenever it changes
+  useEffect(() => {
+    if (chatHistory.length > 0) {
+      localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(chatHistory));
+    }
+  }, [chatHistory]);
 
   const login = (userData: UserProfile) => {
     const userWithTimestamp = {
@@ -60,9 +98,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
   const logout = () => {
     setUser(null);
-    localStorage.removeItem(STORAGE_KEY);
-    // Clear all chat data if needed
-    localStorage.removeItem('pr4kh4r_chats');
+    localStorage.removeItem(USER_STORAGE_KEY);
   };
 
   const updateProfile = (updates: Partial<UserProfile>) => {
@@ -72,10 +108,30 @@ export function UserProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const isAuthenticated = !!user;
+  const addChatToHistory = (chat: ChatHistoryItem) => {
+    setChatHistory(prev => [chat, ...prev]);
+  };
+
+  const removeChatFromHistory = (chatId: string) => {
+    setChatHistory(prev => prev.filter(chat => chat.id !== chatId));
+  };
+
+  const updateChatInHistory = (chat: ChatHistoryItem) => {
+    setChatHistory(prev => prev.map(c => c.id === chat.id ? chat : c));
+  };
 
   return (
-    <UserContext.Provider value={{ user, isAuthenticated, login, logout, updateProfile }}>
+    <UserContext.Provider value={{ 
+      user, 
+      isAuthenticated: !!user, 
+      chatHistory,
+      login, 
+      logout, 
+      updateProfile,
+      addChatToHistory,
+      removeChatFromHistory,
+      updateChatInHistory,
+    }}>
       {children}
     </UserContext.Provider>
   );

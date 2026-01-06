@@ -3,6 +3,7 @@ import { Chat } from "./components/Chat";
 import { Login } from "./components/Login";
 import { Profile } from "./components/Profile";
 import { OAuthCallback } from "./components/OAuthCallback";
+import { PasswordPrompt } from "./components/PasswordPrompt";
 import { ThemeProvider } from "./components/ThemeProvider";
 import { UserProvider, useUser } from "./context/UserContext";
 
@@ -10,15 +11,16 @@ function AppContent() {
   const { isAuthenticated, login } = useUser();
   const [currentView, setCurrentView] = useState<'chat' | 'profile' | 'oauth-callback'>('chat');
   const [oauthProvider, setOauthProvider] = useState<'google' | 'github' | null>(null);
+  const [showPasswordPrompt, setShowPasswordPrompt] = useState(false);
+  const [oauthUserData, setOauthUserData] = useState<any>(null);
 
   // Check if we're returning from OAuth
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const code = urlParams.get('code');
-    const state = urlParams.get('state');
     
     if (code) {
-      // Determine provider from state or URL
+      // Determine provider from URL path
       const path = window.location.pathname;
       if (path.includes('google')) {
         setOauthProvider('google');
@@ -45,8 +47,27 @@ function AppContent() {
 
   const handleOAuthLogin = async (provider: 'google' | 'github') => {
     // OAuth is handled by initiateOAuthLogin in Login component
-    // This callback is for the mock/fallback scenario
     console.log(`OAuth login initiated for ${provider}`);
+  };
+
+  const handleOAuthComplete = (userData: any) => {
+    // Store user data and show password prompt
+    setOauthUserData(userData);
+    setShowPasswordPrompt(true);
+    setCurrentView('chat');
+  };
+
+  const handlePasswordSet = (password: string) => {
+    if (oauthUserData) {
+      // Merge password with OAuth user data
+      const userWithPassword = {
+        ...oauthUserData,
+        password, // Note: In production, hash this on backend
+      };
+      login(userWithPassword);
+      setShowPasswordPrompt(false);
+      setOauthUserData(null);
+    }
   };
 
   return (
@@ -54,10 +75,7 @@ function AppContent() {
       {currentView === 'oauth-callback' && oauthProvider ? (
         <OAuthCallback 
           provider={oauthProvider} 
-          onComplete={() => {
-            setCurrentView('chat');
-            setOauthProvider(null);
-          }} 
+          onComplete={handleOAuthComplete}
         />
       ) : !isAuthenticated ? (
         <Login onLogin={handleLogin} onOAuthLogin={handleOAuthLogin} />
@@ -66,6 +84,21 @@ function AppContent() {
       ) : (
         <Chat onNavigateToProfile={() => setCurrentView('profile')} />
       )}
+      
+      {/* Password prompt after OAuth login */}
+      <PasswordPrompt
+        open={showPasswordPrompt}
+        userData={oauthUserData}
+        onComplete={handlePasswordSet}
+        onSkip={() => {
+          // Skip password, login without it
+          if (oauthUserData) {
+            login(oauthUserData);
+          }
+          setShowPasswordPrompt(false);
+          setOauthUserData(null);
+        }}
+      />
     </div>
   );
 }

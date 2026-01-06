@@ -6,7 +6,7 @@ import { Label } from './ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Textarea } from './ui/textarea';
-import { ArrowLeft, Save, LogOut } from 'lucide-react';
+import { ArrowLeft, Save, LogOut, MessageSquare, Trash2 } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
 
 interface ProfileProps {

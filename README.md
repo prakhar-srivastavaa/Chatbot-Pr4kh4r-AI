@@ -8,21 +8,37 @@ A modern, responsive AI chatbot interface built with React, TypeScript, and Vite
 # Install dependencies
 npm install
 
-# Copy environment variables
-cp .env.example .env
+# Install backend dependencies
+npm install express cors node-fetch@3 dotenv
 
-# Edit .env with your OAuth credentials (see OAUTH_SETUP.md)
+# Add your OAuth credentials to .env
+# See QUICKSTART.md for detailed instructions
+```
 
-# Run development server
+**To get real OAuth data (name, email, picture):**
+```bash
+# Terminal 1: Start backend
+node server.js
+
+# Terminal 2: Start frontend
 npm run dev
 ```
 
+Or use the convenience script: `start-all.bat` (Windows) or `./start-all.sh` (Mac/Linux)
+
 Visit `http://localhost:3030` to see the app.
 
-**⚠️ Important:** OAuth login requires:
-1. OAuth credentials in `.env` file (see [OAUTH_SETUP.md](./OAUTH_SETUP.md))
-2. Backend server for production (see [OAUTH_TROUBLESHOOTING.md](./OAUTH_TROUBLESHOOTING.md))
-3. For now, use email/password login or mock OAuth for development
+📖 **New to OAuth?** Start here: [QUICKSTART.md](./QUICKSTART.md)
+
+**⚠️ Important for OAuth:** To fetch real user data (name, email, profile picture):
+1. **Get your OAuth Client Secrets** from Google Cloud Console & GitHub
+2. **Add them to `.env`** (see [BACKEND_SETUP.md](./BACKEND_SETUP.md))
+3. **Run the backend server** in a separate terminal: `node server.js`
+4. **Then run the frontend**: `npm run dev`
+
+Without the backend, OAuth will work but show placeholder data.
+
+See detailed setup: [BACKEND_SETUP.md](./BACKEND_SETUP.md)
 
 ## ✨ Features
 

@@ -8,6 +8,7 @@ import { Button } from "./ui/button";
 import { Menu } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
 import { ResizableSidebar } from "./ResizableSidebar";
+import { Sheet, SheetContent, SheetTrigger } from "./ui/sheet";
 
 interface ChatProps {
   onNavigateToProfile: () => void;
@@ -118,50 +119,103 @@ export function Chat({ onNavigateToProfile }: ChatProps) {
     }, 1000);
   };
 
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+
   return (
     <SidebarProvider>
       <div className="h-screen w-full bg-background">
-        <ResizableSidebar
-          sidebar={
-            <ClaudeSidebar
-              chatHistory={generateChatHistory()}
-              currentChatId={currentChatId}
-              onSelectChat={handleSelectChat}
-              onNewChat={handleNewChat}
-              onDeleteChat={handleDeleteChat}
-              onSignOut={handleSignOut}
-              onOpenProfile={onNavigateToProfile}
-            />
-          }
-          main={
-            <>
-              {/* Header with sidebar toggle */}
-              <div className="flex-shrink-0 flex items-center gap-2 px-4 py-3 border-b border-border bg-background">
-                <SidebarTrigger className="h-8 w-8 p-0 hover:bg-accent text-[rgba(255,255,255,1)]">
-                  <Menu className="h-4 w-4" />
-                </SidebarTrigger>
-                {currentChat && (
-                  <div className="flex-1 min-w-0">
-                    <h1 className="text-sm font-medium text-foreground truncate">{currentChat.title}</h1>
-                  </div>
+        {/* Desktop: Resizable sidebar */}
+        <div className="hidden md:block h-full">
+          <ResizableSidebar
+            sidebar={
+              <ClaudeSidebar
+                chatHistory={generateChatHistory()}
+                currentChatId={currentChatId}
+                onSelectChat={handleSelectChat}
+                onNewChat={handleNewChat}
+                onDeleteChat={handleDeleteChat}
+                onSignOut={handleSignOut}
+                onOpenProfile={onNavigateToProfile}
+              />
+            }
+            main={
+              <>
+                {/* Desktop Header */}
+                <div className="flex-shrink-0 flex items-center gap-3 px-4 py-3 border-b border-border bg-background">
+                  {currentChat && (
+                    <div className="flex-1 min-w-0">
+                      <h1 className="text-sm font-medium text-foreground truncate">{currentChat.title}</h1>
+                    </div>
+                  )}
+                  <img src="/logo.svg" alt="Pr4kh4r AI" className="h-8 w-8" />
+                  <ThemeToggle />
+                </div>
+                {currentChat && currentChat.messages.length > 0 ? (
+                  <ChatContainer
+                    currentChat={currentChat}
+                    onUpdateChat={handleUpdateChat}
+                  />
+                ) : (
+                  <ClaudeWelcome onSendMessage={handleWelcomeMessage} />
                 )}
-                <ThemeToggle />
-              </div>
-              {currentChat && currentChat.messages.length > 0 ? (
-                <ChatContainer
-                  currentChat={currentChat}
-                  onUpdateChat={handleUpdateChat}
+              </>
+            }
+            minSidebarWidth={200}
+            maxSidebarWidth={480}
+            minMainWidth={320}
+            defaultSidebarWidth={384}
+          />
+        </div>
+
+        {/* Mobile: Drawer sidebar */}
+        <div className="md:hidden flex flex-col h-full">
+          {/* Mobile Header */}
+          <div className="flex-shrink-0 flex items-center gap-3 px-4 py-3 border-b border-border bg-background">
+            <Sheet open={isMobileSidebarOpen} onOpenChange={setIsMobileSidebarOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="p-0 w-[280px]">
+                <ClaudeSidebar
+                  chatHistory={generateChatHistory()}
+                  currentChatId={currentChatId}
+                  onSelectChat={(chatId) => {
+                    handleSelectChat(chatId);
+                    setIsMobileSidebarOpen(false);
+                  }}
+                  onNewChat={() => {
+                    handleNewChat();
+                    setIsMobileSidebarOpen(false);
+                  }}
+                  onDeleteChat={handleDeleteChat}
+                  onSignOut={handleSignOut}
+                  onOpenProfile={onNavigateToProfile}
                 />
-              ) : (
-                <ClaudeWelcome onSendMessage={handleWelcomeMessage} />
-              )}
-            </>
-          }
-          minSidebarWidth={200}
-          maxSidebarWidth={480}
-          minMainWidth={320}
-          defaultSidebarWidth={384} // 40% of 960px
-        />
+              </SheetContent>
+            </Sheet>
+            {currentChat && (
+              <div className="flex-1 min-w-0">
+                <h1 className="text-sm font-medium text-foreground truncate">{currentChat.title}</h1>
+              </div>
+            )}
+            <img src="/logo.svg" alt="Pr4kh4r AI" className="h-8 w-8" />
+            <ThemeToggle />
+          </div>
+
+          {/* Mobile Content */}
+          <div className="flex-1 overflow-hidden">
+            {currentChat && currentChat.messages.length > 0 ? (
+              <ChatContainer
+                currentChat={currentChat}
+                onUpdateChat={handleUpdateChat}
+              />
+            ) : (
+              <ClaudeWelcome onSendMessage={handleWelcomeMessage} />
+            )}
+          </div>
+        </div>
       </div>
     </SidebarProvider>
   );
